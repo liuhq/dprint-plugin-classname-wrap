@@ -1,1 +1,5 @@
-# dprint-plugin-tailwindcss
+# (WIP) dprint-plugin-tailwindcss
+
+## License
+
+[MIT](./LICENSE)

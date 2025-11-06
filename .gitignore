@@ -1,0 +1,5 @@
+target
+
+# the project config of nvim
+.nvim
+.nvim.lua
