@@ -17,9 +17,3 @@ impl IntoU32 for usize {
         self.try_into().unwrap_or(0)
     }
 }
-
-impl IntoU32 for u8 {
-    fn into_u32(self) -> u32 {
-        self.try_into().unwrap_or(0)
-    }
-}

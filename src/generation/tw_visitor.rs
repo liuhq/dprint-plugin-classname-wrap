@@ -16,6 +16,7 @@ use crate::{configuration::Configuration, generation::tw_wrapper::TailwindWrappe
 enum PrintKind {
     StringLiteral,
     JSXExpression,
+    #[allow(dead_code)]
     Function,
     None,
 }
@@ -59,6 +60,15 @@ impl<'a> TailwindVisitor<'a> {
 }
 
 impl<'a> TailwindVisitor<'a> {
+    fn r#match_attr(&self, target: &str) -> bool {
+        self.config.tailwind_attributes.contains(target)
+    }
+
+    #[allow(dead_code)]
+    fn r#match_func(&self, target: &str) -> bool {
+        self.config.tailwind_functions.contains(target)
+    }
+
     fn print_pre_text(&mut self, current_span: &Span) {
         let range = self.last_offset..current_span.start as usize;
         let pre_text = self.source_text.get(range).unwrap();
@@ -75,19 +85,22 @@ impl<'a> TailwindVisitor<'a> {
         attr_name_span: &Span,
         attr_value_span: &Span,
     ) {
-        if let Some(wrapper) = &mut self.wrapper {
-            if let PrintKind::JSXExpression = self.print_kind {
-                wrapper.enter_jsxexpression();
+        match &mut self.wrapper {
+            Some(wrapper) => {
+                if let PrintKind::JSXExpression = self.print_kind {
+                    wrapper.enter_jsxexpression();
+                }
+                self.print_items.extend(wrapper.format(
+                    text,
+                    self.source_text,
+                    attr_name_span.start as usize,
+                    attr_value_span.start as usize,
+                ));
+                if let PrintKind::JSXExpression = self.print_kind {
+                    wrapper.leave_jsxexpression();
+                }
             }
-            self.print_items.extend(wrapper.format(
-                text,
-                self.source_text,
-                attr_name_span.start as usize,
-                attr_value_span.start as usize,
-            ));
-            if let PrintKind::JSXExpression = self.print_kind {
-                wrapper.leave_jsxexpression();
-            }
+            None => self.print_items.extend(ir_helpers::gen_from_string(text)),
         }
     }
 
@@ -102,11 +115,8 @@ impl<'a> TailwindVisitor<'a> {
 
 impl<'a> Visit<'a> for TailwindVisitor<'a> {
     fn leave_node(&mut self, kind: AstKind<'a>) {
-        match kind {
-            AstKind::Program(_) => {
-                self.print_post_text();
-            }
-            _ => {}
+        if let AstKind::Program(_) = kind {
+            self.print_post_text();
         }
     }
 
@@ -121,7 +131,7 @@ impl<'a> Visit<'a> for TailwindVisitor<'a> {
     }
 
     fn visit_jsx_attribute(&mut self, it: &JSXAttribute<'a>) {
-        if it.name.get_identifier().name == "class" {
+        if self.match_attr(it.name.get_identifier().name.as_str()) {
             let value = it.value.as_ref().unwrap();
             match value {
                 JSXAttributeValue::StringLiteral(string_literal) => {
@@ -134,17 +144,16 @@ impl<'a> Visit<'a> for TailwindVisitor<'a> {
                     );
                 }
                 JSXAttributeValue::ExpressionContainer(jsxexpression_container) => {
-                    match &jsxexpression_container.expression {
-                        JSXExpression::StringLiteral(string_literal) => {
-                            self.print_kind = PrintKind::JSXExpression;
-                            self.print_pre_text(&string_literal.span);
-                            self.print_current_text(
-                                &string_literal.raw.unwrap(),
-                                &it.name.get_identifier().span,
-                                &string_literal.span,
-                            );
-                        }
-                        _ => {}
+                    if let JSXExpression::StringLiteral(string_literal) =
+                        &jsxexpression_container.expression
+                    {
+                        self.print_kind = PrintKind::JSXExpression;
+                        self.print_pre_text(&string_literal.span);
+                        self.print_current_text(
+                            &string_literal.raw.unwrap(),
+                            &it.name.get_identifier().span,
+                            &string_literal.span,
+                        );
                     }
                 }
                 _ => {}

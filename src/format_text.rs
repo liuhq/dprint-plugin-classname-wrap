@@ -1,9 +1,10 @@
-use crate::{configuration::Configuration, generation::generate};
-use dprint_core::{
-    configuration::{NewLineKind, resolve_new_line_kind},
-    formatting::*,
-};
 use std::path::Path;
+
+use dprint_core::configuration::resolve_new_line_kind;
+use dprint_core::formatting::*;
+
+use super::configuration::Configuration;
+use super::generation::generate;
 
 pub struct FormatTextOptions<'a> {
     pub path: &'a Path,
@@ -22,26 +23,35 @@ fn format_text_inner(
     source_text: &str,
     config: &Configuration,
 ) -> anyhow::Result<String> {
+    let mut maybe_err: Box<Option<anyhow::Error>> = Box::new(None);
     let strip_bom_text = strip_bom(source_text);
-    Ok(dprint_core::formatting::format(
+    let result = dprint_core::formatting::format(
         || match generate(path, strip_bom_text, config) {
-            Ok(result) => result,
-            Err(err) => PrintItems::from(String::from(err.to_string())),
+            Ok(print_items) => print_items,
+            Err(err) => {
+                maybe_err.replace(err);
+                PrintItems::default()
+            }
         },
         config_to_print_options(strip_bom_text, config),
-    ))
+    );
+
+    if let Some(err) = maybe_err.take() {
+        return Err(err);
+    }
+
+    Ok(result)
 }
 
 fn strip_bom(text: &str) -> &str {
     text.strip_prefix("\u{FEFF}").unwrap_or(text)
 }
 
-fn config_to_print_options(file_text: &str, _config: &Configuration) -> PrintOptions {
+fn config_to_print_options(file_text: &str, config: &Configuration) -> PrintOptions {
     PrintOptions {
-        indent_width: 4,
-        max_width: 120,
-        use_tabs: false,
-        // new_line_text: resolve_new_line_kind(file_text, config.new_line_kind),
-        new_line_text: resolve_new_line_kind(file_text, NewLineKind::LineFeed),
+        indent_width: config.indent_width,
+        max_width: config.line_width,
+        use_tabs: config.use_tabs,
+        new_line_text: resolve_new_line_kind(file_text, config.new_line_kind),
     }
 }

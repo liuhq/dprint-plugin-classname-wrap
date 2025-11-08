@@ -1,5 +1,3 @@
-use std::usize;
-
 use dprint_core::formatting::{PrintItems, Signal, ir_helpers, utils::string_utils};
 use dprint_core_macros::sc;
 
@@ -101,10 +99,11 @@ impl TailwindWrapper {
         } else {
             let line = get_line_number(source_text, attr_value_span_start);
             let indent_count = if line == self.pre_jsx_element_line {
-                self.pre_indent_count + self.option.indent_width.into_u32()
+                let indent_width: u32 = self.option.indent_width.into();
+                self.pre_indent_count + indent_width
             } else {
-                get_column_number(source_text, attr_name_span_start)
-                    + self.option.indent_width.into_u32()
+                let indent_width: u32 = self.option.indent_width.into();
+                get_column_number(source_text, attr_name_span_start) + indent_width
             };
 
             IndentCount::IndentToPre(indent_count)
@@ -179,7 +178,7 @@ fn get_line_number(text: &str, start: usize) -> u32 {
 
 /// 0-indexed
 fn get_indent_level(column: usize, indent_width: u8) -> u32 {
-    let indent_width = indent_width.into_u32();
+    let indent_width: u32 = indent_width.into();
     column.into_u32() / indent_width
 }
 

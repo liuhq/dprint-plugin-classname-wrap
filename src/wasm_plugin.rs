@@ -1,28 +1,26 @@
-use dprint_core::{
-    configuration::{ConfigKeyMap, GlobalConfiguration},
-    generate_plugin_code,
-    plugins::{
-        CheckConfigUpdatesMessage, ConfigChange, FileMatchingInfo, FormatResult, PluginInfo,
-        PluginResolveConfigurationResult, SyncFormatRequest, SyncHostFormatRequest,
-        SyncPluginHandler,
-    },
-};
-
-use crate::format_text::{FormatTextOptions, format_text};
+use dprint_core::configuration::*;
+use dprint_core::generate_plugin_code;
+use dprint_core::plugins::*;
 
 use super::configuration::Configuration;
+use super::format_text::{FormatTextOptions, format_text};
 
 struct TailwindcssPluginHandler;
 
 impl SyncPluginHandler<Configuration> for TailwindcssPluginHandler {
     fn resolve_config(
         &mut self,
-        _config: ConfigKeyMap,
-        _global_config: &GlobalConfiguration,
+        config: ConfigKeyMap,
+        global_config: &GlobalConfiguration,
     ) -> PluginResolveConfigurationResult<Configuration> {
+        let ResolveConfigurationResult {
+            config,
+            diagnostics,
+        } = Configuration::resolve_config(config, global_config);
+
         PluginResolveConfigurationResult {
-            config: Configuration { line_width: 80 },
-            diagnostics: Vec::new(),
+            config,
+            diagnostics,
             file_matching: FileMatchingInfo {
                 file_extensions: vec![
                     String::from("tsx"),
