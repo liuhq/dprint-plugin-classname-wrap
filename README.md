@@ -1,4 +1,4 @@
-# (WIP) dprint-plugin-tailwindcss
+# (WIP) ~dprint-plugin-tailwindcss~ Rename to dprint-plugin-tailwindcss
 
 A Tailwind CSS classname formatting plugin for dprint, supporting class sorting and wrapping.
 
