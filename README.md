@@ -1,16 +1,12 @@
-# (WIP) ~dprint-plugin-tailwindcss~ Rename to dprint-plugin-tailwindcss
+# dprint-plugin-classname-wrap
 
-A Tailwind CSS classname formatting plugin for dprint, supporting class sorting and wrapping.
+A JSX classname wrapping plugin for dprint.
 
-**Work in Progress**
+## Install
 
-- **Matcher**
-  - [x] JSX Attributes: format classes in custom attributes
-  - [ ] Functions: format classes in function calls, e.g., [clsx](https://github.com/lukeed/clsx)
-- **Sorter**
-  - [ ] Sort classes according to Tailwind CSS recommended class order
-- **Wrapper**
-  - [x] Automatically wrap lines when classes are too long
+```sh
+dprint config add liuhq/dprint-plugin-classname-wrap
+```
 
 ## Build
 
@@ -26,21 +22,11 @@ Or with `cargo` if `just` is not installed:
 cargo build --target wasm32-unknown-unknown --features "wasm" --release
 ```
 
-## Usage
-
-> TODO
-
 ## Configuration
 
 ### Matcher
 
-- `tailwindAttributes`: `string[]` - list of JSX attributes to format
-- `tailwindFunctions`: `string[]` - list of functions to format
-
-### Sorter
-
-- `enableSort`: `boolean` - enable class sorting
-- `sortVersion`: `"alphanumeric" | "v4"` - sorting strategy
+- `classnameAttributes`: `string[]` - list of JSX attributes to format
 
 ### Wrapper
 
