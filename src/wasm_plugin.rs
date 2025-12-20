@@ -38,7 +38,7 @@ impl SyncPluginHandler<Configuration> for ClassnameWrapPluginHandler {
         PluginInfo {
             name,
             version: version.clone(),
-            config_key: "classname-wrap".to_string(),
+            config_key: "classnameWrap".to_string(),
             help_url: "".to_string(),
             config_schema_url: "".to_string(),
             update_url: Some("".to_string()),
