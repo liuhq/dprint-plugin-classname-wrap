@@ -51,7 +51,7 @@ impl<'a> Visitor<'a> {
 }
 
 impl<'a> Visitor<'a> {
-    fn r#match_attr(&self, target: &str) -> bool {
+    fn match_attr(&self, target: &str) -> bool {
         self.config.classname_attributes.contains(target)
     }
 

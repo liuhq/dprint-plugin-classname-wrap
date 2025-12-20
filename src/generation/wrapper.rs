@@ -126,7 +126,10 @@ impl Wrapper {
 
         let mut current_width = first_lint_column;
 
-        let parts: Vec<_> = node_text.split_whitespace().collect();
+        let parts: Vec<_> = node_text
+            .split_whitespace()
+            .filter(|c| *c != "\\")
+            .collect();
         let last_index = parts.len() - 1;
 
         parts
