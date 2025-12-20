@@ -1,17 +1,7 @@
 use std::collections::HashSet;
 
 use dprint_core::configuration::*;
-use dprint_core::generate_str_to_from;
 use serde::{Deserialize, Serialize};
-
-#[derive(Clone, PartialEq, Copy, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub enum SortVersion {
-    Alphanumeric,
-    V4,
-}
-
-generate_str_to_from!(SortVersion, [Alphanumeric, "alphanumeric"], [V4, "v4"]);
 
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -21,12 +11,7 @@ pub struct Configuration {
     // required by PrintOptions
     pub new_line_kind: NewLineKind,
 
-    pub tailwind_attributes: HashSet<String>,
-    pub tailwind_functions: HashSet<String>,
-
-    pub enable_sort: bool,
-    // ignore when `enable_sort` is false
-    pub sort_version: SortVersion,
+    pub classname_attributes: HashSet<String>,
 
     pub enable_wrap: bool,
     // ignore when `enable_wrap` is false
@@ -46,13 +31,10 @@ impl Default for Configuration {
         Self {
             use_tabs: false,
             new_line_kind: NewLineKind::Auto,
-            tailwind_attributes: HashSet::from_iter(vec![
+            classname_attributes: HashSet::from_iter(vec![
                 String::from("class"),
                 String::from("className"),
             ]),
-            tailwind_functions: HashSet::new(),
-            enable_sort: true,
-            sort_version: SortVersion::V4,
             enable_wrap: true,
             allow_line_overflow: false,
             indent_to_quote: true,
@@ -64,23 +46,8 @@ impl Default for Configuration {
 }
 
 impl Configuration {
-    pub fn with_tailwind_attributes(mut self, patterns: HashSet<String>) -> Self {
-        self.tailwind_attributes = patterns;
-        self
-    }
-
-    pub fn with_tailwind_functions(mut self, patterns: HashSet<String>) -> Self {
-        self.tailwind_functions = patterns;
-        self
-    }
-
-    pub fn with_enable_sort(mut self, enabled: bool) -> Self {
-        self.enable_wrap = enabled;
-        self
-    }
-
-    pub fn with_sort_version(mut self, version: SortVersion) -> Self {
-        self.sort_version = version;
+    pub fn with_classname_attributes(mut self, patterns: HashSet<String>) -> Self {
+        self.classname_attributes = patterns;
         self
     }
 
@@ -142,8 +109,6 @@ impl Configuration {
             None => HashSet::from_iter(vec![String::from("class"), String::from("className")]),
         };
 
-        let tailwind_functions = HashSet::new();
-
         let resolved = Self {
             use_tabs: global_config
                 .use_tabs
@@ -151,15 +116,7 @@ impl Configuration {
             new_line_kind: global_config
                 .new_line_kind
                 .unwrap_or(RECOMMENDED_GLOBAL_CONFIGURATION.new_line_kind),
-            tailwind_attributes,
-            tailwind_functions,
-            enable_sort: get_value(&mut config, "enableSort", true, &mut diagnostics),
-            sort_version: get_value(
-                &mut config,
-                "sortVersion",
-                SortVersion::V4,
-                &mut diagnostics,
-            ),
+            classname_attributes: tailwind_attributes,
             enable_wrap: get_value(&mut config, "enableWrap", true, &mut diagnostics),
             allow_line_overflow: get_value(
                 &mut config,

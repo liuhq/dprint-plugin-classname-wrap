@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use dprint_plugin_tailwindcss::{FormatTextOptions, configuration, format_text};
+use dprint_plugin_classname_wrap::{FormatTextOptions, configuration, format_text};
 
 fn main() -> anyhow::Result<()> {
     let source_text = r#"import React from 'react';
@@ -36,7 +36,7 @@ export const Counter: React.FC = () => {
         extension: None,
         text: source_text.to_string(),
         config: &configuration::Configuration::default()
-            .with_tailwind_attributes(
+            .with_classname_attributes(
                 vec!["class".to_string(), "className".to_string()]
                     .into_iter()
                     .collect(),

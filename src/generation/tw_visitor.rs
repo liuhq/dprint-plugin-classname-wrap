@@ -16,8 +16,6 @@ use crate::{configuration::Configuration, generation::tw_wrapper::TailwindWrappe
 enum PrintKind {
     StringLiteral,
     JSXExpression,
-    #[allow(dead_code)]
-    Function,
     None,
 }
 
@@ -25,7 +23,6 @@ pub struct TailwindVisitor<'a> {
     source_text: &'a str,
     print_items: PrintItems,
     wrapper: Option<TailwindWrapper>,
-    sorter: Option<()>,
     last_offset: usize,
     config: &'a Configuration,
     print_kind: PrintKind,
@@ -37,16 +34,10 @@ impl<'a> TailwindVisitor<'a> {
             source_text,
             print_items: PrintItems::new(),
             wrapper: None,
-            sorter: None,
             last_offset: 0,
             config,
             print_kind: PrintKind::None,
         }
-    }
-
-    pub fn with_sorter(mut self, sorter: Option<()>) -> Self {
-        self.sorter = sorter;
-        self
     }
 
     pub fn with_wrapper(mut self, wrapper: Option<TailwindWrapper>) -> Self {
@@ -61,12 +52,7 @@ impl<'a> TailwindVisitor<'a> {
 
 impl<'a> TailwindVisitor<'a> {
     fn r#match_attr(&self, target: &str) -> bool {
-        self.config.tailwind_attributes.contains(target)
-    }
-
-    #[allow(dead_code)]
-    fn r#match_func(&self, target: &str) -> bool {
-        self.config.tailwind_functions.contains(target)
+        self.config.classname_attributes.contains(target)
     }
 
     fn print_pre_text(&mut self, current_span: &Span) {

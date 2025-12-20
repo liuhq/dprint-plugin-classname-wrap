@@ -167,7 +167,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "dprint-plugin-tailwindcss"
+name = "dprint-plugin-classname-wrap"
 version = "0.1.0"
 dependencies = [
  "anyhow",
