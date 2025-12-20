@@ -11,7 +11,7 @@ use oxc::{
     span::{Atom, Span},
 };
 
-use crate::{configuration::Configuration, generation::tw_wrapper::TailwindWrapper};
+use crate::{configuration::Configuration, generation::wrapper::Wrapper};
 
 enum PrintKind {
     StringLiteral,
@@ -19,16 +19,16 @@ enum PrintKind {
     None,
 }
 
-pub struct TailwindVisitor<'a> {
+pub struct Visitor<'a> {
     source_text: &'a str,
     print_items: PrintItems,
-    wrapper: Option<TailwindWrapper>,
+    wrapper: Option<Wrapper>,
     last_offset: usize,
     config: &'a Configuration,
     print_kind: PrintKind,
 }
 
-impl<'a> TailwindVisitor<'a> {
+impl<'a> Visitor<'a> {
     pub fn new(source_text: &'a str, config: &'a Configuration) -> Self {
         Self {
             source_text,
@@ -40,7 +40,7 @@ impl<'a> TailwindVisitor<'a> {
         }
     }
 
-    pub fn with_wrapper(mut self, wrapper: Option<TailwindWrapper>) -> Self {
+    pub fn with_wrapper(mut self, wrapper: Option<Wrapper>) -> Self {
         self.wrapper = wrapper;
         self
     }
@@ -50,7 +50,7 @@ impl<'a> TailwindVisitor<'a> {
     }
 }
 
-impl<'a> TailwindVisitor<'a> {
+impl<'a> Visitor<'a> {
     fn r#match_attr(&self, target: &str) -> bool {
         self.config.classname_attributes.contains(target)
     }
@@ -99,7 +99,7 @@ impl<'a> TailwindVisitor<'a> {
     }
 }
 
-impl<'a> Visit<'a> for TailwindVisitor<'a> {
+impl<'a> Visit<'a> for Visitor<'a> {
     fn leave_node(&mut self, kind: AstKind<'a>) {
         if let AstKind::Program(_) = kind {
             self.print_post_text();

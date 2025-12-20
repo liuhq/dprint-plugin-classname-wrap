@@ -20,7 +20,7 @@ impl IndentCount {
     }
 }
 
-pub struct TailwindWrapperOption {
+pub struct WrapperOption {
     pub allow_line_overflow: bool,
     pub indent_to_quote: bool,
     pub indent_width: u8,
@@ -28,15 +28,15 @@ pub struct TailwindWrapperOption {
     pub line_width: u32,
 }
 
-pub struct TailwindWrapper {
-    option: TailwindWrapperOption,
+pub struct Wrapper {
+    option: WrapperOption,
     pre_jsx_element_line: u32,
     pre_indent_count: u32,
     jsxexpression: bool,
 }
 
-impl TailwindWrapper {
-    pub fn new(option: TailwindWrapperOption) -> Self {
+impl Wrapper {
+    pub fn new(option: WrapperOption) -> Self {
         Self {
             option,
             pre_jsx_element_line: 0,
@@ -62,7 +62,7 @@ impl TailwindWrapper {
     }
 }
 
-impl TailwindWrapper {
+impl Wrapper {
     pub fn format(
         &self,
         node_text: &str,
@@ -87,7 +87,7 @@ impl TailwindWrapper {
     }
 }
 
-impl TailwindWrapper {
+impl Wrapper {
     fn parse_indent(
         &self,
         source_text: &str,

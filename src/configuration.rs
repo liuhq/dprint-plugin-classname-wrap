@@ -90,14 +90,14 @@ impl Configuration {
         let mut config = config;
         let mut diagnostics = Vec::new();
 
-        let tailwind_attributes = match get_nullable_vec(
+        let classname_attributes = match get_nullable_vec(
             &mut config,
-            "tailwindAttributes",
+            "classnameAttributes",
             |value, i, diagnostics| match value {
                 ConfigKeyValue::String(value) => Some(value),
                 _ => {
                     diagnostics.push(ConfigurationDiagnostic {
-                        property_name: format!("tailwindAttributes[{}]", i),
+                        property_name: format!("classnameAttributes[{}]", i),
                         message: String::from("Expected array of strings"),
                     });
                     None
@@ -116,7 +116,7 @@ impl Configuration {
             new_line_kind: global_config
                 .new_line_kind
                 .unwrap_or(RECOMMENDED_GLOBAL_CONFIGURATION.new_line_kind),
-            classname_attributes: tailwind_attributes,
+            classname_attributes,
             enable_wrap: get_value(&mut config, "enableWrap", true, &mut diagnostics),
             allow_line_overflow: get_value(
                 &mut config,

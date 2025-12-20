@@ -5,8 +5,8 @@ use std::path::Path;
 use crate::{
     configuration::Configuration,
     generation::{
-        tw_visitor::TailwindVisitor,
-        tw_wrapper::{TailwindWrapper, TailwindWrapperOption},
+        visitor::Visitor,
+        wrapper::{Wrapper, WrapperOption},
     },
 };
 
@@ -19,18 +19,17 @@ pub fn generate(
     let source_type = SourceType::from_path(path).unwrap();
     let parsed = Parser::new(&allocator, source_text, source_type).parse();
     let program = parsed.program;
-    let mut visitor =
-        TailwindVisitor::new(source_text, config).with_wrapper(if config.enable_wrap {
-            Some(TailwindWrapper::new(TailwindWrapperOption {
-                allow_line_overflow: config.allow_line_overflow,
-                indent_to_quote: config.indent_to_quote,
-                indent_width: config.indent_width,
-                line_width_includes_indent: config.line_width_includes_indent,
-                line_width: config.line_width,
-            }))
-        } else {
-            None
-        });
+    let mut visitor = Visitor::new(source_text, config).with_wrapper(if config.enable_wrap {
+        Some(Wrapper::new(WrapperOption {
+            allow_line_overflow: config.allow_line_overflow,
+            indent_to_quote: config.indent_to_quote,
+            indent_width: config.indent_width,
+            line_width_includes_indent: config.line_width_includes_indent,
+            line_width: config.line_width,
+        }))
+    } else {
+        None
+    });
     visitor.visit_program(&program);
 
     Ok(visitor.print_items())

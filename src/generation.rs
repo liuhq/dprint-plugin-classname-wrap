@@ -1,6 +1,6 @@
 mod generate;
-mod tw_visitor;
-mod tw_wrapper;
 mod types;
+mod visitor;
+mod wrapper;
 
 pub use generate::generate;

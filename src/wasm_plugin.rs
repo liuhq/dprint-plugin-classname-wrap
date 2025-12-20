@@ -5,9 +5,9 @@ use dprint_core::plugins::*;
 use super::configuration::Configuration;
 use super::format_text::{FormatTextOptions, format_text};
 
-struct TailwindcssPluginHandler;
+struct ClassnameWrapPluginHandler;
 
-impl SyncPluginHandler<Configuration> for TailwindcssPluginHandler {
+impl SyncPluginHandler<Configuration> for ClassnameWrapPluginHandler {
     fn resolve_config(
         &mut self,
         config: ConfigKeyMap,
@@ -38,7 +38,7 @@ impl SyncPluginHandler<Configuration> for TailwindcssPluginHandler {
         PluginInfo {
             name,
             version: version.clone(),
-            config_key: "tailwindcss".to_string(),
+            config_key: "classname-wrap".to_string(),
             help_url: "".to_string(),
             config_schema_url: "".to_string(),
             update_url: Some("".to_string()),
@@ -74,4 +74,4 @@ impl SyncPluginHandler<Configuration> for TailwindcssPluginHandler {
     }
 }
 
-generate_plugin_code!(TailwindcssPluginHandler, TailwindcssPluginHandler);
+generate_plugin_code!(ClassnameWrapPluginHandler, ClassnameWrapPluginHandler);
