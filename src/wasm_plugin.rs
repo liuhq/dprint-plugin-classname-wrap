@@ -41,7 +41,7 @@ impl SyncPluginHandler<Configuration> for ClassnameWrapPluginHandler {
             config_key: "classnameWrap".to_string(),
             help_url: "".to_string(),
             config_schema_url: "".to_string(),
-            update_url: Some("".to_string()),
+            update_url: Some("https://plugins.dprint.dev/liuhq/dprint-plugin-classname-wrap/latest.json".to_string()),
         }
     }
 
