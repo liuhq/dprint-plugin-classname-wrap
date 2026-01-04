@@ -13,10 +13,39 @@ use oxc::{
 
 use crate::{configuration::Configuration, generation::wrapper::Wrapper};
 
-enum PrintKind {
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AttributeContext {
     StringLiteral,
     JSXExpression,
-    None,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct AttributePos<'a> {
+    source_text: &'a str,
+    attr_name_span: &'a Span,
+    attr_value_span: &'a Span,
+}
+
+impl<'a> AttributePos<'a> {
+    pub fn new(source_text: &'a str, attr_name_span: &'a Span, attr_value_span: &'a Span) -> Self {
+        Self {
+            source_text,
+            attr_name_span,
+            attr_value_span,
+        }
+    }
+
+    pub fn source_text(&self) -> &str {
+        self.source_text
+    }
+
+    pub fn attr_name_span_start(&self) -> usize {
+        self.attr_name_span.start as usize
+    }
+
+    pub fn attr_value_span_start(&self) -> usize {
+        self.attr_value_span.start as usize
+    }
 }
 
 pub struct Visitor<'a> {
@@ -25,7 +54,6 @@ pub struct Visitor<'a> {
     wrapper: Option<Wrapper>,
     last_offset: usize,
     config: &'a Configuration,
-    print_kind: PrintKind,
 }
 
 impl<'a> Visitor<'a> {
@@ -36,33 +64,36 @@ impl<'a> Visitor<'a> {
             wrapper: None,
             last_offset: 0,
             config,
-            print_kind: PrintKind::None,
         }
     }
 
+    #[must_use]
     pub fn with_wrapper(mut self, wrapper: Option<Wrapper>) -> Self {
         self.wrapper = wrapper;
         self
     }
 
+    #[must_use]
     pub fn print_items(self) -> PrintItems {
         self.print_items
     }
 }
 
 impl<'a> Visitor<'a> {
+    #[inline]
     fn match_attr(&self, target: &str) -> bool {
         self.config.classname_attributes.contains(target)
     }
 
     fn print_pre_text(&mut self, current_span: &Span) {
-        let range = self.last_offset..current_span.start as usize;
-        let pre_text = self.source_text.get(range).unwrap();
+        let start = current_span.start as usize;
+        let range = self.last_offset..start;
 
-        self.print_items
-            .extend(ir_helpers::gen_from_string(pre_text));
-
-        self.last_offset = current_span.end as usize;
+        if let Some(pre_text) = self.source_text.get(range) {
+            self.print_items
+                .extend(ir_helpers::gen_from_string(pre_text));
+            self.last_offset = current_span.end as usize;
+        }
     }
 
     fn print_current_text(
@@ -70,21 +101,14 @@ impl<'a> Visitor<'a> {
         text: &Atom<'_>,
         attr_name_span: &Span,
         attr_value_span: &Span,
+        context: AttributeContext,
     ) {
         match &mut self.wrapper {
             Some(wrapper) => {
-                if let PrintKind::JSXExpression = self.print_kind {
-                    wrapper.enter_jsxexpression();
-                }
-                self.print_items.extend(wrapper.format(
-                    text,
-                    self.source_text,
-                    attr_name_span.start as usize,
-                    attr_value_span.start as usize,
-                ));
-                if let PrintKind::JSXExpression = self.print_kind {
-                    wrapper.leave_jsxexpression();
-                }
+                let attr_pos = AttributePos::new(self.source_text, attr_name_span, attr_value_span);
+
+                self.print_items
+                    .extend(wrapper.format(text, attr_pos, context));
             }
             None => self.print_items.extend(ir_helpers::gen_from_string(text)),
         }
@@ -92,16 +116,28 @@ impl<'a> Visitor<'a> {
 
     fn print_post_text(&mut self) {
         let range = self.last_offset..;
-        let post_text = self.source_text.get(range).unwrap();
 
-        self.print_items
-            .extend(ir_helpers::gen_from_string(post_text));
+        if let Some(post_text) = self.source_text.get(range) {
+            self.print_items
+                .extend(ir_helpers::gen_from_string(post_text));
+        }
+    }
+
+    fn handle_string_literal(
+        &mut self,
+        string_literal_span: &Span,
+        raw_text: &Atom<'_>,
+        attr_name_span: &Span,
+        context: AttributeContext,
+    ) {
+        self.print_pre_text(string_literal_span);
+        self.print_current_text(raw_text, attr_name_span, string_literal_span, context);
     }
 }
 
 impl<'a> Visit<'a> for Visitor<'a> {
     fn leave_node(&mut self, kind: AstKind<'a>) {
-        if let AstKind::Program(_) = kind {
+        if matches!(kind, AstKind::Program(_)) {
             self.print_post_text();
         }
     }
@@ -117,32 +153,35 @@ impl<'a> Visit<'a> for Visitor<'a> {
     }
 
     fn visit_jsx_attribute(&mut self, it: &JSXAttribute<'a>) {
-        if self.match_attr(it.name.get_identifier().name.as_str()) {
-            let value = it.value.as_ref().unwrap();
-            match value {
-                JSXAttributeValue::StringLiteral(string_literal) => {
-                    self.print_kind = PrintKind::StringLiteral;
-                    self.print_pre_text(&string_literal.span);
-                    self.print_current_text(
-                        &string_literal.raw.unwrap(),
-                        &it.name.get_identifier().span,
-                        &string_literal.span,
-                    );
-                }
-                JSXAttributeValue::ExpressionContainer(jsxexpression_container) => {
-                    if let JSXExpression::StringLiteral(string_literal) =
-                        &jsxexpression_container.expression
-                    {
-                        self.print_kind = PrintKind::JSXExpression;
-                        self.print_pre_text(&string_literal.span);
-                        self.print_current_text(
-                            &string_literal.raw.unwrap(),
-                            &it.name.get_identifier().span,
-                            &string_literal.span,
-                        );
+        let attr_name = it.name.get_identifier();
+
+        if self.match_attr(attr_name.name.as_str()) {
+            if let Some(value) = it.value.as_ref() {
+                match value {
+                    JSXAttributeValue::StringLiteral(literal) => {
+                        if let Some(raw) = &literal.raw {
+                            self.handle_string_literal(
+                                &literal.span,
+                                raw,
+                                &attr_name.span,
+                                AttributeContext::StringLiteral,
+                            );
+                        }
                     }
+                    JSXAttributeValue::ExpressionContainer(container) => {
+                        if let JSXExpression::StringLiteral(literal) = &container.expression {
+                            if let Some(raw) = &literal.raw {
+                                self.handle_string_literal(
+                                    &literal.span,
+                                    raw,
+                                    &attr_name.span,
+                                    AttributeContext::JSXExpression,
+                                );
+                            }
+                        }
+                    }
+                    _ => {}
                 }
-                _ => {}
             }
         }
         walk_jsx_attribute(self, it);
